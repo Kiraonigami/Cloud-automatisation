@@ -1,0 +1,87 @@
+- name: Déployer le backend Node.js sur la VM Azure
+  hosts: azure
+  become: yes
+  vars:
+    account_name: ""
+    access_key: ""
+
+  tasks:
+    - name: Installer dépendances système
+      apt:
+        name:
+          - curl
+          - git
+        update_cache: yes
+
+    - name: Installer Node.js 18 via NodeSource
+      shell: |
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+
+    - name: Cloner le repo Node.js
+      git:
+        repo: https://github.com/nitin27may/azure-blob-upload-nodejs.git
+        dest: /home/azureuser/app
+        force: yes
+        update: yes
+
+    - name: Installer les dépendances Node.js
+      npm:
+        path: /home/azureuser/app/api
+
+    - name: Créer le fichier .env
+      copy:
+        dest: /home/azureuser/app/api/.env
+        content: |
+          AZURE_STORAGE_ACCOUNT_NAME={{ account_name }}
+          AZURE_STORAGE_ACCOUNT_ACCESS_KEY={{ access_key }}
+          AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName={{ account_name }};AccountKey={{ access_key }};EndpointSuffix=core.windows.net
+          AZURE_STORAGE_CONTAINER_NAME=static
+          EXPRESS_PORT=3000
+          SECRET=supersecret
+
+    - name: Remplacer config.js
+      copy:
+        dest: /home/azureuser/app/api/config.js
+        content: |
+          require('dotenv').config();
+          module.exports = {
+            secret: process.env.SECRET,
+            azureStorageConfig: {
+              connectionString: process.env.AZURE_STORAGE_CONNECTION_STRING,
+              accountName: process.env.AZURE_STORAGE_ACCOUNT_NAME,
+              accountKey: process.env.AZURE_STORAGE_ACCOUNT_ACCESS_KEY,
+              containerName: process.env.AZURE_STORAGE_CONTAINER_NAME,
+              blobURL: `https://${process.env.AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/`,
+            },
+            expressPort: process.env.EXPRESS_PORT,
+          };
+
+    - name: Créer un service systemd pour l'app
+      copy:
+        dest: /etc/systemd/system/backend-node.service
+        content: |
+          [Unit]
+          Description=Backend Node.js Azure Blob
+          After=network.target
+
+          [Service]
+          EnvironmentFile=/home/azureuser/app/api/.env
+          Environment=NODE_ENV=production
+          ExecStart=/usr/bin/node /home/azureuser/app/api/index.js
+          WorkingDirectory=/home/azureuser/app/api
+          Restart=always
+          User=azureuser
+          SyslogIdentifier=backend-node
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Recharger systemd pour prendre en compte les modifs
+      command: systemctl daemon-reload
+
+    - name: Démarrer et activer le service backend-node
+      systemd:
+        name: backend-node
+        enabled: yes
+        state: restarted

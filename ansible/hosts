@@ -1,0 +1,2 @@
+[azure]
+4.251.108.135 ansible_user=azureuser ansible_ssh_private_key_file=~/.ssh/id_rsa

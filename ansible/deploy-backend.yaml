@@ -13,12 +13,12 @@
           - git
         update_cache: yes
 
-    - name: Installer Node.js 18 via NodeSource
+    - name: Installer Node.js 18 via NodeSource(apt node est outdated)
       shell: |
         curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
         sudo apt-get install -y nodejs
 
-    - name: Cloner le repo Node.js
+    - name: Cloner le repo Node.js(trouver sur github)
       git:
         repo: https://github.com/nitin27may/azure-blob-upload-nodejs.git
         dest: /home/azureuser/app
@@ -29,7 +29,7 @@
       npm:
         path: /home/azureuser/app/api
 
-    - name: Créer le fichier .env
+    - name: Créer le fichier .env(avec infos sensibles dans la commande)
       copy:
         dest: /home/azureuser/app/api/.env
         content: |
@@ -77,7 +77,7 @@
           [Install]
           WantedBy=multi-user.target
 
-    - name: Recharger systemd pour prendre en compte les modifs
+    - name: Recharger systemd pour prendre en compte les modifs(au cas où)
       command: systemctl daemon-reload
 
     - name: Démarrer et activer le service backend-node

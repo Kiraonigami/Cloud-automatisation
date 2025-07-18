@@ -3,6 +3,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
+//création du réseau
 resource "azurerm_virtual_network" "vnet" {
   name                = "vnet"
   address_space       = ["10.0.0.0/16"]
@@ -10,6 +11,7 @@ resource "azurerm_virtual_network" "vnet" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
+//création du sous réseau
 resource "azurerm_subnet" "subnet" {
   name                 = "subnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -17,6 +19,7 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+//création de l'ip publique 
 resource "azurerm_public_ip" "public_ip" {
   name                = "public-ip"
   location            = var.location
@@ -24,6 +27,7 @@ resource "azurerm_public_ip" "public_ip" {
   allocation_method   = "Static"
 }
 
+//création de l'interface réseau
 resource "azurerm_network_interface" "nic" {
   name                = "nic"
   location            = var.location
@@ -37,14 +41,13 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
+//association de l'interface réseau au groupe
 resource "azurerm_network_interface_security_group_association" "nic_nsg_assoc" {
   network_interface_id      = azurerm_network_interface.nic.id
   network_security_group_id = azurerm_network_security_group.nsg.id
 }
 
-
-
-
+//création des règles de ports
 resource "azurerm_network_security_group" "nsg" {
   name                = "vm-nsg"
   location            = var.location
@@ -72,11 +75,11 @@ resource "azurerm_network_security_group" "nsg" {
   destination_port_range     = "3000"
   source_address_prefix      = "*"
   destination_address_prefix = "*"
-}
+  }
 
 }
 
-
+//initialisation de la VM qui sera remplie par ansible après
 resource "azurerm_linux_virtual_machine" "vm" {
   name                  = "vm-exo-SBO"
   location              = var.location
@@ -106,6 +109,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
 
 }
 
+//création du storage cloud avec un id random
 resource "azurerm_storage_account" "storage" {
   name = "storagesbo${random_integer.rand.result}"
   resource_group_name      = azurerm_resource_group.rg.name
@@ -119,7 +123,7 @@ resource "random_integer" "rand" {
   max = 99999
 }
 
-
+//création du container static
 resource "azurerm_storage_container" "container" {
   name                  = "static"
   storage_account_id = azurerm_storage_account.storage.id

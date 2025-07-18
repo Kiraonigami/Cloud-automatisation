@@ -1,9 +1,6 @@
 - name: Déployer le backend Node.js sur la VM Azure
   hosts: azure
   become: yes
-  vars:
-    account_name: ""
-    access_key: ""
 
   tasks:
     - name: Installer dépendances système
@@ -33,9 +30,9 @@
       copy:
         dest: /home/azureuser/app/api/.env
         content: |
-          AZURE_STORAGE_ACCOUNT_NAME={{ account_name }}
+          AZURE_STORAGE_ACCOUNT_NAME={{ storage_name }}
           AZURE_STORAGE_ACCOUNT_ACCESS_KEY={{ access_key }}
-          AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName={{ account_name }};AccountKey={{ access_key }};EndpointSuffix=core.windows.net
+          AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;AccountName={{ storage_name }};AccountKey={{ access_key }};EndpointSuffix=core.windows.net
           AZURE_STORAGE_CONTAINER_NAME=static
           EXPRESS_PORT=3000
           SECRET=supersecret
